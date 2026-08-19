@@ -2,9 +2,7 @@ FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-# Install dependencies without running the package.json postinstall hook.
-# Voidfall's postinstall runs the client build, but the source files are
-# intentionally copied only after dependency installation in this image.
+# Install dependencies without running build hooks.
 COPY package*.json ./
 RUN npm install --ignore-scripts
 
@@ -17,6 +15,6 @@ RUN npm run client:build
 ENV NODE_ENV=production
 ENV PRODUCTION=true
 
-EXPOSE 1337
+EXPOSE 4000
 
 CMD ["npm", "start"]
