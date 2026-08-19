@@ -6,11 +6,17 @@ import { GameServer } from './game-server.ts';
 
 dotenv.config();
 
-function main() {
+async function main() {
   const port = Number(process.env.PORT) || 1337;
-  const maxPlayers = Number(process.env.MAX_PLAYERS) || 100;
+  const maxPlayers = Math.max(1, Number(process.env.MAX_PLAYERS) || 100);
+  const worldCount = Math.max(1, Number(process.env.WORLDS) || 1);
+  const playersPerWorld = Math.max(
+    1,
+    Number(process.env.PLAYERS_PER_WORLD) || maxPlayers,
+  );
+  const maxConnections = worldCount * playersPerWorld;
 
-  const server = new Server(port, maxPlayers);
+  const server = new Server(port, maxConnections);
   const worlds: GameServer[] = [];
 
   server.onConnection((connection) => {
@@ -22,14 +28,15 @@ function main() {
         return;
       }
     }
+
+    // A race can occur if every world fills between the socket accept and this
+    // callback. Do not leave an unassigned connection hanging around.
+    connection.close('All game worlds are full');
   });
 
   server.onError((error) => {
     logger.error(error);
   });
-
-  const worldCount = Number(process.env.WORLDS) || 1;
-  const playersPerWorld = Number(process.env.PLAYERS_PER_WORLD) || maxPlayers;
 
   for (let i = 0; i < worldCount; ++i) {
     const world = new GameServer(
@@ -37,7 +44,10 @@ function main() {
       playersPerWorld,
       server,
     );
-    world.init();
+    world.init().catch((error) => {
+      logger.error(`Failed to initialize ${world.id}: ${error}`);
+      process.exitCode = 1;
+    });
     worlds.push(world);
   }
 
@@ -45,4 +55,7 @@ function main() {
   provideWorlds(() => worlds);
 }
 
-main();
+main().catch((error) => {
+  logger.error(`Fatal server startup error: ${error}`);
+  process.exitCode = 1;
+});
