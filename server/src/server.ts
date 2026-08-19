@@ -54,7 +54,9 @@ export default class Server {
     this.connectedClients = 0;
     this.clients = new Array(this.maxClients).fill(undefined);
 
-    const server = app.listen(port, () => console.log(`Listening on ${port}`));
+    const server = app.listen(port, '0.0.0.0', () =>
+      console.log(`Listening on 0.0.0.0:${port}`),
+    );
     this.wss = new WebSocket.Server({ server });
 
     this.wss.on('connection', (connection: WebSocket, req: IncomingMessage) => {
