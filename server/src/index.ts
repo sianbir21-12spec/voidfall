@@ -7,10 +7,10 @@ import { GameServer } from './game-server.ts';
 dotenv.config();
 
 function main() {
-  const server = new Server(
-    +process.env.PORT! || 1337,
-    process.env.MAX_PLAYERS as unknown as number,
-  );
+  const port = Number(process.env.PORT) || 1337;
+  const maxPlayers = Number(process.env.MAX_PLAYERS) || 100;
+
+  const server = new Server(port, maxPlayers);
   const worlds: GameServer[] = [];
 
   server.onConnection((connection) => {
@@ -28,10 +28,13 @@ function main() {
     logger.error(error);
   });
 
-  for (let i = 0; i < Number(process.env.WORLDS); ++i) {
+  const worldCount = Number(process.env.WORLDS) || 1;
+  const playersPerWorld = Number(process.env.PLAYERS_PER_WORLD) || maxPlayers;
+
+  for (let i = 0; i < worldCount; ++i) {
     const world = new GameServer(
       `world${i}`,
-      Number(process.env.PLAYERS_PER_WORLD),
+      playersPerWorld,
       server,
     );
     world.init();
