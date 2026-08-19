@@ -20,6 +20,11 @@ export function provideWorlds(worlds: () => WorldLike[]): void {
   getWorlds = worlds;
 }
 
+// Lightweight health endpoint for platform probes and uptime checks.
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // A public census of open lobbies and the real players in each. Registered before
 // the production catch-all so it isn't swallowed by the SPA fallback. CORS-open so
 // the dev client (served from Vite on another origin) can poll it too.
@@ -28,9 +33,8 @@ app.get('/api/players', (_req, res) => {
   res.json(computePlayers(getWorlds()));
 });
 
-// Server-hosted assets (the 610 MB music playlist) served in both dev and prod,
-// so they never bloat the client build uploaded to CrazyGames. The client
-// fetches them from here via VITE_ASSET_BASE_URL (see music-player.ts).
+// Server-hosted assets served in both dev and prod, so they never bloat the client
+// build. The client fetches them from here via VITE_ASSET_BASE_URL.
 app.use(express.static(path.join(__dirname, '../public')));
 
 if (process.env.PRODUCTION) {
@@ -63,7 +67,7 @@ export default class Server {
       const clientId = this.findFreeClientIndex();
 
       if (clientId === -1) {
-        connection.close();
+        connection.close(1013, 'Server is full');
         return;
       }
 
@@ -98,8 +102,11 @@ export default class Server {
   }
 
   removeConnection(id: number): void {
+    if (!this.clients[id]) {
+      return;
+    }
     delete this.clients[id];
-    this.connectedClients--;
+    this.connectedClients = Math.max(0, this.connectedClients - 1);
   }
 
   getConnection(id: number): Connection | undefined {
