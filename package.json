@@ -9,7 +9,6 @@
     "client:build": "vite build --config client/vite.config.js",
     "server:start:dev": "nodemon --config server/nodemon.json server/src/index.ts",
     "server:start": "tsx server/src/index.ts",
-    "postinstall": "npm run client:build",
     "start": "PRODUCTION=true npm run server:start",
     "test:sim": "tsx test/sim/index.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json",
@@ -35,7 +34,7 @@
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.3",
     "atob": "^2.1.2",
-    "blob-util": "^2.0.2",
+    "blob-util": "^2.0.0",
     "cross-blob": "^2.0.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
@@ -43,7 +42,6 @@
     "three": "^0.126.1",
     "winston": "^3.3.3",
     "winston-transport-browserconsole": "^1.0.5",
-    "ws": "^7.3.1",
     "xmlhttprequest": "^1.8.0"
   }
 }
