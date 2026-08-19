@@ -48,7 +48,10 @@ export class GameServer {
     this.maxClients = maxClients;
     this.connectedClients = 0;
     this.server = server;
-    this.updatesPerSecond = 60;
+    this.updatesPerSecond = Math.max(
+      20,
+      Math.min(60, Number(process.env.UPDATES_PER_SECOND) || 60),
+    );
     this.lastTime = performance.now();
 
     this.asteroidFieldSize = 4000;
@@ -74,9 +77,6 @@ export class GameServer {
       this.network.onEntityDespawned(entity);
     };
 
-    // Addendum order: respawn runs before combat so a ship killed this tick
-    // begins its countdown next tick; mining runs after combat so it sees the
-    // asteroid ore (health) that combat depleted this tick.
     this.mining = new MiningSubsystem();
     this.combat = new CombatSubsystem();
     this.world
@@ -88,10 +88,12 @@ export class GameServer {
   }
 
   async init(): Promise<void> {
-    // Physics loads Rapier + collision meshes async; only start the loop and
-    // populate the asteroid field once bodies can actually be built.
     await this.physics.init();
-    this.spawnAsteroids(500);
+    const asteroidCount = Math.max(
+      50,
+      Math.min(1000, Number(process.env.ASTEROID_COUNT) || 500),
+    );
+    this.spawnAsteroids(asteroidCount);
     this.spawnVendor();
     this.bots.reconcile(0);
 
@@ -101,7 +103,9 @@ export class GameServer {
     );
     setInterval(this.update.bind(this), 1000 / this.updatesPerSecond);
 
-    logger.info(`${this.id} simulation started`);
+    logger.info(
+      `${this.id} simulation started (${asteroidCount} asteroids, ${this.updatesPerSecond} Hz)`,
+    );
   }
 
   update(): void {
@@ -121,59 +125,30 @@ export class GameServer {
   }
 
   tick(dt: number, time: number): void {
-    // 0. Drain incoming messages/inputs before the sim steps (Hello -> ship
-    //    spawn, latest input copied onto each ship's controller).
     this.network.processIncoming(this.world, time);
-
-    // 0b. Drive AI bots: top up the roster, then set each bot's control input.
-    //     Runs before the entity loop so Ship.update applies that input (thrust +
-    //     turn + weapon fire) and the physics flies the ship for real — bots are
-    //     self-simulated, so applyAll runs their thrust/torque like a player's.
     this.bots.reconcile(time);
     this.bots.update(this.world, dt, time);
 
-    // 1. Entity behaviour (control, weapon firing). Snapshot the values so
-    //    entities spawned mid-tick (e.g. bullets) wait for the next tick.
     for (const e of [...this.world.entities.values()]) {
       e.update(dt, this.world, time);
     }
 
-    // 2. Physics: apply controls/forces, integrate, collect collisions.
     this.physics.applyAll?.(this.world, dt);
     this.physics.step(dt);
-    // 2b. Sweep bullets along their path (raycast prev -> next) for hits. Runs
-    //     after step() so ships/asteroids are at their post-step poses.
     this.physics.sweepProjectiles?.(this.world, dt);
 
-    // 3. Subsystems: respawn, then combat (reads drained collisions).
     for (const s of this.world.subsystems) {
       s.update(this.world, dt, time);
     }
 
-    // 3a. Award XP for ships killed this tick, before reap/respawn resets the
-    //     victims. The killer's Progress + everyone's Leaderboard ride the
-    //     broadcast below (change-tracked / throttled).
     this.awardKills();
-
-    // 3b. Shrink mined asteroids' colliders to match their ore level, so the
-    //     next tick's shots and ship bumps meet the rock at the size clients see.
     this.physics.syncAsteroidScales?.(this.world);
-
-    // 3c. Broadcast chunks the mining subsystem spawned (at their impact points)
-    //     and collected this tick, so every client mirrors the ore field.
     this.network.broadcastSpawned(this.mining.drainSpawned());
     this.network.broadcastCollected(this.mining.drainCollected());
-
-    // 4. Reap destroyed entities.
     this.world.reap();
-
-    // 5. Broadcast alive-transitions + snapshot diff to every connection.
     this.network.broadcast(this.world, time);
   }
 
-  // Drain the ships killed this tick and bank each kill's XP on the killer. The
-  // victim's level was captured at death (it resets to 1 next tick on respawn).
-  // Unattributed deaths (no killer) and any stale self-kills award nobody.
   awardKills(): void {
     for (const kill of this.combat.drainKills()) {
       if (kill.killerId === null || kill.killerId === kill.victimId) {
@@ -189,7 +164,6 @@ export class GameServer {
 
   handlePlayerConnect(connection: Connection): void {
     logger.debug(`Adding player${connection.id} to ${this.id}`);
-
     this.connectedClients++;
     this.network.addConnection(connection);
   }
@@ -200,20 +174,15 @@ export class GameServer {
     for (let i = 0; i < count; ++i) {
       const position = Utils.getRandomPosition(this.asteroidFieldSize, rng);
       const rotation = Utils.getRandomQuaternion(rng);
-
       const scaleValue = [10, 20, 40, 60, 120 /*240, /*560*/];
       const scale = scaleValue[Math.floor(rng() * scaleValue.length)];
 
-      // RapierPhysicsWorld builds the collision shape/body (via onSpawn).
       this.world.spawn(
         new Asteroid({ transform: { position, rotation }, scale }),
       );
     }
   }
 
-  // A single NPC transport orbiting outside the asteroid field (future vendor).
-  // Spawn it on its orbit so the initial body pose matches Vendor.update's first
-  // tick (no teleport).
   spawnVendor(): void {
     this.world.spawn(
       new Vendor({ transform: { position: new Vector3(3000, 0, 0) } }),
