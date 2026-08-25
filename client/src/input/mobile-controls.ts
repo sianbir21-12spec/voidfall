@@ -27,6 +27,7 @@ export class MobileControls {
     actions.className = 'mobile-actions';
     actions.append(
       this.makeButton('mobile-fire', 'FIRE', 'weaponPrimary'),
+      this.makeButton('mobile-missile', 'MISSILE', 'weaponSecondary'),
       this.makeButton('mobile-boost', 'BOOST', 'boost'),
     );
 
@@ -44,7 +45,7 @@ export class MobileControls {
   private makeButton(
     className: string,
     label: string,
-    action: 'weaponPrimary' | 'boost',
+    action: 'weaponPrimary' | 'weaponSecondary' | 'boost',
   ): HTMLButtonElement {
     const button = document.createElement('button');
     button.className = className;
@@ -77,10 +78,7 @@ export class MobileControls {
       this.stickPointer = event.pointerId;
       this.stick.setPointerCapture(event.pointerId);
       const rect = this.stick.getBoundingClientRect();
-      this.stickCenter = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      };
+      this.stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       this.updateStick(event.clientX, event.clientY);
     });
 
