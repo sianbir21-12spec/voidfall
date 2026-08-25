@@ -11,6 +11,7 @@ import { RespawnSubsystem } from '../../shared/sim/subsystems/respawn.ts';
 import { CombatSubsystem } from '../../shared/sim/subsystems/combat.ts';
 import { awardKill } from '../../shared/sim/progression.ts';
 import { KILL_REWARD } from '../../shared/sim/combat-economy.ts';
+import Messages from '../../shared/messages.ts';
 import type { Ship } from '../../shared/sim/entities/ship.ts';
 import { Vendor } from '../../shared/sim/entities/vendor.ts';
 import type { PhysicsWorld } from '../../shared/sim/physics/physics-world.ts';
@@ -60,8 +61,20 @@ export class GameServer {
       if (kill.killerId === null || kill.killerId === kill.victimId) continue;
       const killer = this.world.get(kill.killerId) as Ship | undefined;
       if (!killer || killer.alive === false) continue;
+
       awardKill(killer, kill.victimLevel);
       killer.credits += KILL_REWARD;
+
+      // Credits are owner-only state. Push the updated balance immediately so the
+      // HUD receives the +100 reward on the same server tick as the kill.
+      for (const connection of this.network.connections) {
+        if (this.network.ships.get(connection.id) === killer) {
+          connection.pushMessage(
+            new Messages.Stats(killer.cargo, killer.cargoCapacity, killer.credits),
+          );
+          break;
+        }
+      }
     }
   }
   handlePlayerConnect(connection: Connection): void { this.connectedClients++; this.network.addConnection(connection); logger.debug(`Adding player${connection.id} to ${this.id}`); }
