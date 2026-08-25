@@ -1,22 +1,11 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-}
-
-body {
-  overflow: hidden;
-  cursor: none;
-  touch-action: none;
-  background: #020207;
-}
-
+* { box-sizing: border-box; margin: 0; }
+body { overflow: hidden; cursor: none; touch-action: none; background: #020207; }
 #boot-overlay { position: fixed; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity 0.6s ease; }
 #boot-overlay.hidden { opacity: 0; }
 #boot-overlay .label { color: #8fb7c8; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; letter-spacing: 0.35em; text-transform: uppercase; animation: boot-pulse 1.6s ease-in-out infinite; }
 @keyframes boot-pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.8; } }
 canvas { width: 100vw; height: 100vh; touch-action: none; }
 .crosshair { position: absolute; z-index: 1; fill: white; left: 50vw; top: 50vh; transform: translate(-50%, -50%); pointer-events: none; }
-
 #landing { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; cursor: default; color: #cfd8e6; font-family: system-ui, -apple-system, sans-serif; background: radial-gradient(ellipse 60% 70% at 50% 45%, rgba(2,4,10,.72), rgba(2,4,10,0) 75%); opacity: 1; transition: opacity .5s ease; }
 #landing.hidden { opacity: 0; pointer-events: none; }
 .landing-console { width: min(560px,100%); display: flex; flex-direction: column; align-items: center; gap: 26px; animation: landing-rise .6s cubic-bezier(.2,.8,.2,1) both; }
@@ -49,10 +38,7 @@ canvas { width: 100vw; height: 100vh; touch-action: none; }
 .control-chips .key { height:26px; }
 .launch-btn { display:inline-flex; align-items:center; justify-content:center; margin-top:4px; padding:15px 56px; font:inherit; font-size:16px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:#1a1206; background:linear-gradient(180deg,#f3c766,#e2b04a); border:none; border-radius:9px; cursor:pointer; }
 .launch-glyph { font-size:12px; margin-left:4px; }
-
-/* Mobile flight controls are hidden on desktop and never interfere with mouse input. */
 .mobile-controls { display:none; }
-
 @media (pointer: coarse) and (max-width: 900px) {
   body, canvas { cursor: default; }
   .mobile-controls { position:fixed; inset:0; z-index:20; display:block; pointer-events:none; user-select:none; -webkit-user-select:none; }
@@ -60,9 +46,10 @@ canvas { width: 100vw; height: 100vh; touch-action: none; }
   .mobile-stick::before { content:''; position:absolute; inset:31px; border:1px solid rgba(143,208,255,.22); border-radius:50%; }
   .mobile-stick span { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:rgba(143,208,255,.45); font:700 10px system-ui,sans-serif; letter-spacing:.18em; }
   .mobile-stick-knob { position:absolute; left:50%; top:50%; width:56px; height:56px; transform:translate(-50%,-50%); border-radius:50%; border:2px solid rgba(226,176,74,.9); background:rgba(226,176,74,.18); box-shadow:0 0 18px rgba(226,176,74,.25); pointer-events:none; }
-  .mobile-actions { position:absolute; right:20px; bottom:24px; display:flex; align-items:end; gap:12px; pointer-events:auto; }
-  .mobile-actions button { width:82px; height:82px; border-radius:50%; border:2px solid rgba(143,208,255,.65); background:rgba(4,10,20,.58); color:#eaf4ff; font:700 11px system-ui,sans-serif; letter-spacing:.12em; touch-action:none; -webkit-tap-highlight-color:transparent; }
-  .mobile-actions .mobile-fire { width:96px; height:96px; border-color:rgba(226,176,74,.9); color:#f3c766; }
+  .mobile-actions { position:absolute; right:20px; bottom:24px; display:flex; align-items:end; gap:10px; pointer-events:auto; }
+  .mobile-actions button { width:74px; height:74px; border-radius:50%; border:2px solid rgba(143,208,255,.65); background:rgba(4,10,20,.58); color:#eaf4ff; font:700 10px system-ui,sans-serif; letter-spacing:.1em; touch-action:none; -webkit-tap-highlight-color:transparent; }
+  .mobile-actions .mobile-fire { width:90px; height:90px; border-color:rgba(226,176,74,.9); color:#f3c766; }
+  .mobile-actions .mobile-missile { border-color:rgba(143,208,255,.9); color:#8fd0ff; }
   .mobile-actions button:active { transform:scale(.94); background:rgba(143,208,255,.18); }
   .mobile-aim-hint { position:absolute; right:18px; top:72%; color:rgba(143,208,255,.34); font:600 9px system-ui,sans-serif; letter-spacing:.15em; pointer-events:none; }
   #landing { padding:16px; }
@@ -70,5 +57,4 @@ canvas { width: 100vw; height: 100vh; touch-action: none; }
   .control-map, .control-chips { opacity:.65; }
   .landing-title { font-size:clamp(44px,16vw,76px); }
 }
-
 @media (prefers-reduced-motion: reduce) { .landing-console,.dcell.ship .thrust{animation:none} }

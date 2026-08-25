@@ -11,8 +11,8 @@ import {
 import {
   MINING_DAMAGE_FACTOR,
   MINING_LASER_FACTOR,
-  Items,
 } from '../../shared/sim/mining.ts';
+import { Items } from '../../shared/sim/combat-economy.ts';
 import {
   CombatSubsystem,
   applyDamage,
@@ -151,7 +151,6 @@ test('a mining-laser bullet mines rock at its own higher factor', () => {
 
   const mined = full - rock.health;
   assert.equal(mined, 10 * MINING_LASER_FACTOR);
-  // And it genuinely out-mines the default combat weapon.
   assert.ok(mined > 10 * MINING_DAMAGE_FACTOR);
 });
 
@@ -165,7 +164,6 @@ test('a bullet mining factor does NOT amplify ship (non-rock) damage', () => {
 
   new CombatSubsystem().update(world);
 
-  // miningFactor only applies to rock (maxOre); a ship takes the raw damage.
   assert.equal(ship.health, 70);
 });
 
@@ -199,7 +197,6 @@ test('a lethal hit reports a kill crediting the shooter with the victim level', 
   assert.equal(kills[0].killerId, shooter.id);
   assert.equal(kills[0].victimId, target.id);
   assert.equal(kills[0].victimLevel, 4);
-  // Drained once, cleared after.
   assert.equal(combat.drainKills().length, 0);
 });
 
@@ -254,8 +251,6 @@ test('applyDamage mines rock at the default factor (attacker not credited)', () 
   const rock = world.spawn(new Asteroid({ scale: 60 }));
   const full = rock.health;
 
-  // Passing an attacker must not throw or credit rock (it carries no lastHitBy) —
-  // a mined-out asteroid is never a kill.
   applyDamage(rock, 10, undefined, undefined, attacker);
 
   assert.equal(full - rock.health, 10 * MINING_DAMAGE_FACTOR);
@@ -295,11 +290,16 @@ test('applyDamage leaves an invulnerable victim untouched', () => {
 
 test('maxWeaponDamage clamps to the ship real equipped weapons', () => {
   const ship = new Ship();
-  // Default loadout: cannons in primary (damage 5), secondary empty.
-  assert.equal(maxWeaponDamage(ship), 5);
+  // Current starter loadout: cannons primary + lock-on missile secondary.
+  assert.equal(maxWeaponDamage(ship), 25);
 
-  // Only the mining laser equipped → its low combat damage caps the clamp.
+  // Missile-only loadout is still capped by the missile's real 25 damage.
   ship.primaryItem = -1;
-  ship.secondaryItem = Items.MINING_LASER;
-  assert.equal(maxWeaponDamage(ship), 1);
+  ship.secondaryItem = Items.LOCK_MISSILE;
+  assert.equal(maxWeaponDamage(ship), 25);
+
+  // Cannon-only loadout returns the cannon's real 5 damage.
+  ship.primaryItem = Items.CANNONS;
+  ship.secondaryItem = -1;
+  assert.equal(maxWeaponDamage(ship), 5);
 });
