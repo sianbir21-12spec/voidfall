@@ -10,7 +10,7 @@ shooters.
 > 🌟 If you find this project interesting, please consider giving it a star — it
 > helps others discover it too!
 
-🎮 **Play it now at [nickvanurk.com/voidfall](https://voidfall.zeabur.app/)**
+🎮 **Play it now at [voidfall](https://voidfall.zeabur.app/)**
 
 ## :blush: **Why?**
 
