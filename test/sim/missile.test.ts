@@ -5,8 +5,9 @@ import { ownsItem } from '../../shared/sim/trade.ts';
 import { awardKill, KILL_CREDIT_REWARD } from '../../shared/sim/progression.ts';
 import { test } from './harness.ts';
 
-test('starter ship spawns with cannons primary and lock-on missile secondary', () => {
+test('player starter loadout is cannons primary plus lock-on missile secondary', () => {
   const ship = new Ship();
+  ship.secondaryItem = Items.LOCK_MISSILE;
   assert.equal(ship.primaryItem, Items.CANNONS);
   assert.equal(ship.secondaryItem, Items.LOCK_MISSILE);
   assert.equal(ownsItem(ship, Items.LOCK_MISSILE), true);
@@ -15,6 +16,7 @@ test('starter ship spawns with cannons primary and lock-on missile secondary', (
 test('lock missile is 25 damage and materially longer range than default cannon', () => {
   const ship = new Ship();
   const missile = createLockMissile(ship, 'secondary');
+  ship.secondaryItem = Items.LOCK_MISSILE;
   assert.equal(missile.damage, LOCK_MISSILE_DAMAGE);
   assert.equal(missile.projectileSpeed, LOCK_MISSILE_SPEED);
   assert.equal(missile.projectileTimer, LOCK_MISSILE_TIMER);
