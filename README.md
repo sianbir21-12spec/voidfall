@@ -1,4 +1,4 @@
-# [Voidfall](https://nickvanurk.com/voidfall)
+# [Voidfall](https://voidfall.zeabur.app/)
 
 Voidfall is a 3D multiplayer space dogfight game that runs in the browser. Jump
 into an arena, chase down other pilots, and blast them out of the void. The
@@ -10,7 +10,7 @@ shooters.
 > 🌟 If you find this project interesting, please consider giving it a star — it
 > helps others discover it too!
 
-🎮 **Play it now at [nickvanurk.com/voidfall](https://nickvanurk.com/voidfall)**
+🎮 **Play it now at [nickvanurk.com/voidfall](https://voidfall.zeabur.app/)**
 
 ## :blush: **Why?**
 
