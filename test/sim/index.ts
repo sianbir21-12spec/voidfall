@@ -1,7 +1,3 @@
-// Later tasks add their test imports here, e.g.:
-//   import './world.test.ts';
-//   import './entity.test.ts';
-//   import './snapshot.test.ts';
 import './transform.test.ts';
 import './world.test.ts';
 import './entity.test.ts';
@@ -40,5 +36,6 @@ import './rebind.test.ts';
 import './quantize.test.ts';
 import './bitpack.test.ts';
 import './players-api.test.ts';
+import './missile.test.ts';
 import { run } from './harness.ts';
 run();
