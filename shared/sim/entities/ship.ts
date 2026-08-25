@@ -30,28 +30,19 @@ export function createDefaultWeapons(ship: Ship, slot: WeaponSlot = 'primary'): 
 }
 
 export function createMiningLaser(ship: Ship, slot: WeaponSlot = 'secondary'): Weapon {
-  const laser = new Weapon({
-    offset: new Vector3(0, -0.6, 5),
-    fireInterval: 120,
-    slot,
-    damage: 1,
-    miningFactor: MINING_LASER_FACTOR,
-    beamRange: MINING_LASER_RANGE,
-  });
+  const laser = new Weapon({ offset: new Vector3(0, -0.6, 5), fireInterval: 120, slot, damage: 1, miningFactor: MINING_LASER_FACTOR, beamRange: MINING_LASER_RANGE });
   laser.parent = ship;
   return laser;
 }
 
-// The starter secondary is a real projectile, using the same aim ray as the
-// cannons. Its high damage is server-clamped from the equipped item, so a client
-// cannot turn a cannon shot into a missile. Its long lifetime makes the weapon
-// useful across the game's multi-kilometre arena.
 export function createLockMissile(ship: Ship, slot: WeaponSlot = 'secondary'): Weapon {
   const missile = new Weapon({
     offset: new Vector3(0, -0.35, 5.5),
     fireInterval: LOCK_MISSILE_FIRE_INTERVAL,
     slot,
     damage: LOCK_MISSILE_DAMAGE,
+    projectileSpeed: LOCK_MISSILE_SPEED,
+    projectileTimer: LOCK_MISSILE_TIMER,
   });
   missile.parent = ship;
   return missile;
@@ -66,10 +57,7 @@ export function weaponsForItem(ship: Ship, itemId: number, slot: WeaponSlot): We
 
 export function maxWeaponDamage(ship: Ship): number {
   let max = 0;
-  for (const weapon of [
-    ...weaponsForItem(ship, ship.primaryItem, 'primary'),
-    ...weaponsForItem(ship, ship.secondaryItem, 'secondary'),
-  ]) {
+  for (const weapon of [...weaponsForItem(ship, ship.primaryItem, 'primary'), ...weaponsForItem(ship, ship.secondaryItem, 'secondary')]) {
     if (weapon.damage > max) max = weapon.damage;
   }
   return max;
@@ -185,8 +173,8 @@ export class Ship extends Entity {
     this.applyInput(input, dt);
     for (const weapon of this.weapons) {
       if (weapon.beamRange != null) continue;
-      weapon.tryFire(time, (position, rotation, damage, miningFactor) => {
-        const bullet = new Bullet({ transform: { position, rotation }, damage, miningFactor });
+      weapon.tryFire(time, (position, rotation, damage, miningFactor, _beamRange, projectileSpeed, projectileTimer) => {
+        const bullet = new Bullet({ transform: { position, rotation }, damage, speed: projectileSpeed, timer: projectileTimer, miningFactor });
         bullet.owner = this;
         return world.spawn(bullet);
       });
