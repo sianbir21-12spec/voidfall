@@ -60,18 +60,25 @@ export class GameServer {
     for (const kill of this.combat.drainKills()) {
       if (kill.killerId === null || kill.killerId === kill.victimId) continue;
       const killer = this.world.get(kill.killerId) as Ship | undefined;
-      if (!killer || killer.alive === false) continue;
+      // The kill was already confirmed by CombatSubsystem. Do not discard a valid
+      // reward just because the killer also died in the same tick (trade-kill).
+      if (!killer) continue;
 
       awardKill(killer, kill.victimLevel);
       killer.credits += KILL_REWARD;
 
-      // Credits are owner-only state. Push the updated balance immediately so the
-      // HUD receives the +100 reward on the same server tick as the kill.
+      // Credits are owner-only state. Push the authoritative +100 immediately and
+      // advance lastStats too, preventing the normal broadcast pass from sending
+      // the exact same Stats packet a second time.
       for (const connection of this.network.connections) {
         if (this.network.ships.get(connection.id) === killer) {
           connection.pushMessage(
             new Messages.Stats(killer.cargo, killer.cargoCapacity, killer.credits),
           );
+          this.network.lastStats.set(connection.id, {
+            cargo: killer.cargo,
+            credits: killer.credits,
+          });
           break;
         }
       }
