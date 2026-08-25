@@ -3,13 +3,7 @@ import { Entity } from '../entity.ts';
 import type { TransformInit } from '../transform.ts';
 import Types from '../../types.ts';
 
-// Muzzle speed of a bullet along its local +Z, in world units per millisecond
-// (integrateBullets/sweepProjectiles multiply by the ms timestep). The lead
-// indicator reads this to solve the firing intercept; ×1000 gives units/second.
 export const DEFAULT_BULLET_SPEED = 1.5;
-
-// Long-range dogfights need enough projectile lifetime for the lead indicator and
-// actual damage range to agree. At 1500 units/s this gives a 6 km maximum reach.
 export const DEFAULT_BULLET_TIMER = 4000;
 
 export interface BulletInit {
@@ -19,10 +13,9 @@ export interface BulletInit {
   speed?: number;
   timer?: number;
   miningFactor?: number;
-  // Present ⇒ this is a stationary beam, not a projectile. Its value is the max
-  // reach in world units; `beamLength` is the actual drawn length (muzzle → hit),
-  // resolved by a raycast at spawn.
   beamRange?: number;
+  homingTargetId?: number | null;
+  homingTurnRate?: number;
 }
 
 export class Bullet extends Entity {
@@ -37,16 +30,10 @@ export class Bullet extends Entity {
   beamRange: number | undefined;
   beamLength: number | undefined;
   beamPulse: number;
+  homingTargetId: number | null;
+  homingTurnRate: number;
 
-  constructor({
-    id,
-    transform,
-    damage,
-    speed = DEFAULT_BULLET_SPEED,
-    timer = DEFAULT_BULLET_TIMER,
-    miningFactor,
-    beamRange,
-  }: BulletInit = {}) {
+  constructor({ id, transform, damage, speed = DEFAULT_BULLET_SPEED, timer = DEFAULT_BULLET_TIMER, miningFactor, beamRange, homingTargetId = null, homingTurnRate = 0 }: BulletInit = {}) {
     super({ id, transform, type: Types.Entities.BULLET });
     this.velocity = new Vector3(0, 0, beamRange != null ? 0 : speed);
     this.angularVelocity = new Vector3();
@@ -65,12 +52,12 @@ export class Bullet extends Entity {
     this.beamRange = beamRange;
     this.beamLength = undefined;
     this.beamPulse = 0;
+    this.homingTargetId = homingTargetId;
+    this.homingTurnRate = homingTurnRate;
   }
 
   update(dt: number): void {
     this.ageMs += dt;
-    if (this.ageMs > this.timeoutMs) {
-      this.markDestroyed();
-    }
+    if (this.ageMs > this.timeoutMs) this.markDestroyed();
   }
 }
