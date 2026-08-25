@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import type { EntityWorld } from '../../shared/sim/entity.ts';
 import { Ship } from '../../shared/sim/entities/ship.ts';
 import { Asteroid } from '../../shared/sim/entities/asteroid.ts';
-import { Bullet } from '../../shared/sim/entities/bullet.ts';
+import { Bullet, DEFAULT_BULLET_TIMER } from '../../shared/sim/entities/bullet.ts';
 import { InputCommand } from '../../shared/sim/input.ts';
 import Types from '../../shared/types.ts';
 import { test } from './harness.ts';
@@ -21,7 +21,6 @@ test('Asteroid is always a static body (weight 0) regardless of scale', () => {
   const big = new Asteroid({ scale: 6 });
   assert.equal(big.type, Types.Entities.ASTEROID);
   assert.equal(big.weight, 0);
-
   assert.equal(new Asteroid({ scale: 1 }).weight, 0);
   assert.equal(new Asteroid().weight, 0);
 });
@@ -32,7 +31,7 @@ test('Bullet type and ported fields', () => {
   assert.equal(bullet.kinematic, true);
   assert.equal(bullet.damage, 5);
   assert.equal(bullet.velocity.z, 0.5);
-  assert.equal(bullet.timeoutMs, 2000);
+  assert.equal(bullet.timeoutMs, DEFAULT_BULLET_TIMER);
 });
 
 test('Bullet exposes the full rigidbody surface setupRigidBody needs', () => {
@@ -77,8 +76,6 @@ test('Bullet.update accumulates ageMs and stays alive before timeout', () => {
   assert.equal(bullet.destroyed, false);
 });
 
-// timeout-system.js uses `timer -= delta; if (timer < 0)`, i.e. destroyed only
-// once accumulated dt STRICTLY exceeds timeoutMs — exactly at the boundary it lives.
 test('Bullet at exactly timeoutMs is not destroyed (strict comparison)', () => {
   const bullet = new Bullet({ timer: 100 });
   bullet.update(60);
@@ -104,33 +101,20 @@ test('Ship starts alive with a zero respawn timer', () => {
 test('a dead ship.update does not apply input or spawn bullets', () => {
   const ship = new Ship();
   ship.alive = false;
-  ship.controller = {
-    lastInput: new InputCommand({ forward: true, weaponPrimary: true }),
-  };
+  ship.controller = { lastInput: new InputCommand({ forward: true, weaponPrimary: true }) };
   let spawned = 0;
-  const fakeWorld: EntityWorld = {
-    spawn: (e) => {
-      spawned++;
-      return e;
-    },
-  };
-
+  const fakeWorld: EntityWorld = { spawn: (e) => { spawned++; return e; } };
   ship.update(0.5, fakeWorld, 1000);
-
   assert.deepEqual(ship.velocity.toArray(), [0, 0, 0]);
   assert.equal(spawned, 0);
 });
 
 test('Ship.applyInput writes the aim ray and distance', () => {
   const ship = new Ship();
-  const input = new InputCommand({
-    aim: {
-      mouse: { x: 0, y: 0 },
-      origin: { x: 1, y: 2, z: 3 },
-      direction: { x: 0, y: 0, z: 1 },
-      distance: 42,
-    },
-  });
+  const input = new InputCommand({ aim: {
+    mouse: { x: 0, y: 0 }, origin: { x: 1, y: 2, z: 3 },
+    direction: { x: 0, y: 0, z: 1 }, distance: 42,
+  }});
   ship.applyInput(input, 0.5);
   assert.deepEqual(ship.aim!.origin.toArray(), [1, 2, 3]);
   assert.deepEqual(ship.aim!.direction.toArray(), [0, 0, 1]);
